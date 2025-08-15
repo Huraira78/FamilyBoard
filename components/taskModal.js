@@ -13,10 +13,14 @@ import Modal from 'react-native-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { useColors } from '../contextApi/colorContext';
+import { getColors } from '../Screens/colors';
 
 const ITEM_HEIGHT = 44;
 
 export default function AddTaskModal({ visible, onClose }) {
+  const { isDarkMode } = useColors();
+  const colors = getColors(isDarkMode);
   const navigation = useNavigation();
   const categories = [
     { label: '🧹 Chores', value: 'chores' },
@@ -133,44 +137,71 @@ export default function AddTaskModal({ visible, onClose }) {
       animationIn="zoomIn"
       animationOut="zoomOut"
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView
           style={{ maxHeight: '100%' }}
           contentContainerStyle={{ paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Add New Task</Text>
+          <Text style={[styles.title, { color: colors.titleText }]}>
+            Add New Task
+          </Text>
 
           {/* Title */}
-          <Text style={styles.label}>Task Title *</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Task Title *
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              { borderColor: colors.inputBorder, color: colors.inputText },
+            ]}
             placeholder="What needs to be done?"
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor={
+              isDarkMode ? 'rgba(255, 255, 255, 1)' : 'rgba(0,0,0,0.35)'
+            }
             value={title}
             onChangeText={setTitle}
           />
 
           {/* Notes */}
-          <Text style={styles.label}>Notes (optional)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Notes (optional)
+          </Text>
           <TextInput
-            style={[styles.input, { height: 84 }]}
+            style={[
+              styles.input,
+              {
+                height: 74,
+                borderColor: colors.inputBorder,
+                color: colors.inputText,
+              },
+            ]}
             multiline
             placeholder="Add any additional details..."
-            placeholderTextColor="rgba(0,0,0,0.35)"
+            placeholderTextColor={
+              isDarkMode ? 'rgba(255, 255, 255, 1)' : 'rgba(0,0,0,0.35)'
+            }
             value={notes}
             onChangeText={setNotes}
           />
 
           {/* Category */}
-          <Text style={styles.label}>Category</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Category</Text>
           <TouchableOpacity
-            style={styles.dropdownHeader}
+            style={[
+              styles.dropdownHeader,
+              { borderColor: colors.inputBorder, color: colors.inputText },
+            ]}
             onPress={toggleCategoryList}
             activeOpacity={0.8}
           >
-            <Text style={styles.dropdownHeaderText}>{category.label}</Text>
-            <Text style={styles.caret}>{isCategoryOpen ? '▴' : '▾'}</Text>
+            <Text style={[styles.dropdownHeaderText, { color: colors.text }]}>
+              {category.label}
+            </Text>
+            <Text style={[styles.caret, { color: colors.text }]}>
+              {isCategoryOpen ? '▴' : '▾'}
+            </Text>
           </TouchableOpacity>
           <Animated.View
             style={{
@@ -195,21 +226,34 @@ export default function AddTaskModal({ visible, onClose }) {
                     animateTo(categoryHeight, 0);
                   }}
                 >
-                  <Text style={styles.itemText}>{item.label}</Text>
-                  <Text style={styles.tick}>{selected ? '✔' : '  '}</Text>
+                  <Text style={[styles.itemText, { color: colors.text }]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[styles.tick, { color: colors.text }]}>
+                    {selected ? '✔' : '  '}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
           </Animated.View>
 
           {/* Assign To */}
-          <Text style={styles.label}>Assign to (optional)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Assign to (optional)
+          </Text>
           <TouchableOpacity
-            style={styles.dropdownHeader}
+            style={[
+              styles.dropdownHeader,
+              {
+                borderColor: colors.inputBorder,
+                color: colors.inputText,
+                backgroundColor: colors.card,
+              },
+            ]}
             onPress={toggleAssignList}
             activeOpacity={0.8}
           >
-            <Text style={styles.dropdownHeaderText}>
+            <Text style={[styles.dropdownHeaderText, { color: colors.text }]}>
               {assignee ? assignee.label : 'No assignment'}
             </Text>
             <Text style={styles.caret}>{isAssignOpen ? '▴' : '▾'}</Text>
@@ -221,27 +265,6 @@ export default function AddTaskModal({ visible, onClose }) {
               borderRadius: 10,
             }}
           >
-            {/* {people.map(item => {
-              const selected = !!assignee && item.value === assignee.value;
-              return (
-                <TouchableOpacity
-                  key={item.value}
-                  style={[
-                    styles.dropdownItem,
-                    selected && isAssignOpen && styles.dropdownItemSelected,
-                  ]}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setAssignee(item);
-                    setIsAssignOpen(false);
-                    animateTo(assignHeight, 0);
-                  }}
-                >
-                  <Text style={styles.itemText}>{item.label}</Text>
-                  <Text style={styles.tick}>{selected ? '✔' : '  '}</Text>
-                </TouchableOpacity>
-              );
-            })} */}
             {people.map(item => {
               const selected = !!assignee && item.value === assignee.value;
               return (
@@ -258,21 +281,27 @@ export default function AddTaskModal({ visible, onClose }) {
                     animateTo(assignHeight, 0);
                   }}
                 >
-                  <Text style={styles.itemText}>{item.label}</Text>
-                  <Text style={styles.tick}>{selected ? '✔' : '  '}</Text>
+                  <Text style={[styles.itemText, { color: colors.text }]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[styles.tick, { color: colors.text }]}>
+                    {selected ? '✔' : '  '}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
           </Animated.View>
 
           {/* Due Date */}
-          <Text style={styles.label}>Due Date 📅</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Due Date 📅
+          </Text>
           <TouchableOpacity
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             onPress={() => setShowDatePicker(true)}
             activeOpacity={0.8}
           >
-            <Text style={{ color: '#333' }}>{dueDate.toDateString()}</Text>
+            <Text style={{ color: colors.text }}>{dueDate.toDateString()}</Text>
           </TouchableOpacity>
           {showDatePicker && (
             <DateTimePicker
@@ -313,7 +342,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', marginBottom: 14 },
   label: { fontSize: 14, fontWeight: '600', marginTop: 10, marginBottom: 6 },
   input: {
-    backgroundColor: '#f9f9f9',
+    // backgroundColor: '#f9f9f9',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
@@ -324,7 +353,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#f9f9f9',
+    // backgroundColor: '#f9f9f9',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#cfcfcf',
@@ -339,7 +368,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },

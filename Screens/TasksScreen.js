@@ -10,7 +10,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import AddTaskModal from '../components/taskModal';
 import CheckBox from '@react-native-community/checkbox';
 import { useNavigation } from '@react-navigation/native';
+import { useColors } from '../contextApi/colorContext';
+import { getColors } from './colors';
 export default function TasksScreen() {
+  const { isDarkMode } = useColors();
+  const colors = getColors(isDarkMode);
   const navigation = useNavigation();
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('All');
@@ -61,17 +65,24 @@ export default function TasksScreen() {
     saveTasks(updated);
   };
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Title */}
-      <View style={styles.topView}>
-        <Text style={styles.title}>Family Board 🏡</Text>
+      <View style={[styles.topView, { backgroundColor: colors.card }]}>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Family Board 🏡
+        </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.settingIcon}>⚙️</Text>
+          <Text style={[styles.settingIcon, { color: colors.text }]}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
       {/* Filters */}
-      <View style={styles.filterContainer}>
+      <View
+        style={[
+          styles.filterContainer,
+          { backgroundColor: colors.card, color: colors.text },
+        ]}
+      >
         {filters.map(f => (
           <TouchableOpacity
             key={f}
@@ -95,7 +106,12 @@ export default function TasksScreen() {
         data={filteredTasks}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={styles.taskCard}>
+          <View
+            style={[
+              styles.taskCard,
+              { backgroundColor: colors.card, color: colors.text },
+            ]}
+          >
             <CheckBox
               value={!!item.completed}
               onValueChange={() => toggleCompleted(item.id)}
@@ -106,15 +122,18 @@ export default function TasksScreen() {
                 style={[
                   styles.taskTitle,
                   item.completed && styles.taskTitleCompleted,
+                  { color: colors.text },
                 ]}
               >
                 {item.title}
               </Text>
-              <Text style={styles.taskNotes}>{item.notes || 'No notes'}</Text>
+              <Text style={[styles.taskNotes, { color: colors.itemSubtitle }]}>
+                {item.notes || 'No notes'}
+              </Text>
               <Text style={styles.taskCategory}>
                 {item.assignee ? item.assignee : 'No assignee'}
               </Text>
-              <Text style={styles.taskDate}>
+              <Text style={[styles.taskDate, { color: colors.itemSubtitle }]}>
                 Due:{' '}
                 {item.dueDate
                   ? new Date(item.dueDate).toLocaleDateString()

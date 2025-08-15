@@ -10,16 +10,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import AddTaskModal from '../components/taskModal';
+import { useColors } from '../contextApi/colorContext';
+import { getColors } from './colors';
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const [tasks, setTasks] = useState([]); // Empty at first
   const [modalVisible, setModalVisible] = useState(false);
-
+  const { isDarkMode } = useColors();
+  const colors = getColors(isDarkMode);
   if (tasks.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.title}>Family Board 🏡</Text>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <Text style={[styles.title, { color: colors.text }]}>
+          Family Board 🏡
+        </Text>
 
         {/* Center Family Icon */}
         <LinearGradient
@@ -32,8 +39,10 @@ export default function HomeScreen() {
         </LinearGradient>
 
         {/* No tasks message */}
-        <Text style={styles.noTaskTitle}>No tasks yet!</Text>
-        <Text style={styles.noTaskSubtitle}>
+        <Text style={[styles.noTaskTitle, { color: colors.text }]}>
+          No tasks yet!
+        </Text>
+        <Text style={[styles.noTaskSubtitle, { color: colors.text }]}>
           Add your first task to get your family organized and working together.
         </Text>
 

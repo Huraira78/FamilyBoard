@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useColors } from '../contextApi/colorContext';
+import { getColors } from './colors';
 const DEFAULT_PEOPLE = [
   { label: '👨 Dad', value: '👨 Dad' },
   { label: '👩 Mom', value: '👩 Mom' },
@@ -19,6 +21,8 @@ const DEFAULT_PEOPLE = [
 const EMOJI_OPTIONS = ['👨', '👩', '🧒', '👵', '👴', '🐶', '🐱'];
 
 export default function SettingsScreen({ navigation }) {
+  const { isDarkMode, toggleColorMode } = useColors();
+  const colors = getColors(isDarkMode);
   const [people, setPeople] = useState([]);
   const [name, setName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('');
@@ -67,39 +71,57 @@ export default function SettingsScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.card }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>
-            <Icon name="arrow-back" size={24} color="#000" />
+            <Icon name="arrow-back" size={24} color={colors.text} />
           </Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Settings
+        </Text>
       </View>
-      <View style={styles.familyView}>
+      <View style={[styles.familyView, { backgroundColor: colors.card }]}>
         {/* Add button */}
         {!adding && (
-          <View style={styles.addRow}>
-            <Text style={styles.familyText}>👨‍👩‍👧 Family Members</Text>
+          <View
+            style={[
+              styles.addRow,
+
+              {
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Text style={[styles.familyText, { color: colors.text }]}>
+              👨‍👩‍👧 Family Members
+            </Text>
             <TouchableOpacity onPress={() => setAdding(true)}>
-              <Text style={styles.plusIcon}>+</Text>
+              <Text style={[styles.plusIcon, { color: colors.text }]}>+</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Add form */}
         {adding && (
-          <View style={styles.addForm}>
-            <Text>Name</Text>
+          <View style={[styles.addForm, { backgroundColor: colors.card }]}>
+            <Text style={{ color: colors.text }}>Name</Text>
             <TextInput
-              style={styles.input}
+              t
+              style={[
+                styles.input,
+                { color: colors.text, borderColor: colors.border },
+              ]}
               placeholder="Enter name"
               value={name}
               onChangeText={setName}
-              placeholderTextColor="black"
+              placeholderTextColor={isDarkMode ? '#aaa' : '#555'}
             />
-            <Text>Avatar</Text>
+            <Text style={{ color: colors.text }}>Avatar</Text>
             <View style={styles.emojiRow}>
               {EMOJI_OPTIONS.map(emoji => (
                 <TouchableOpacity
@@ -138,8 +160,15 @@ export default function SettingsScreen({ navigation }) {
           data={people}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item, index }) => (
-            <View style={styles.personRow}>
-              <Text style={styles.personText}>{item.label}</Text>
+            <View
+              style={[
+                styles.personRow,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.personText, { color: colors.text }]}>
+                {item.label}
+              </Text>
               <TouchableOpacity onPress={() => handleDelete(index)}>
                 <Text style={styles.deleteIcon}>
                   <Icon name="trash-outline" size={24} color="red" />
@@ -149,39 +178,48 @@ export default function SettingsScreen({ navigation }) {
           )}
         />
       </View>
-      <View style={styles.container1}>
-        <Text style={styles.header1}>Appearance</Text>
+      <View style={[styles.container1, { backgroundColor: colors.card }]}>
+        <Text style={[styles.header1, { color: colors.text }]}>Appearance</Text>
         <View style={styles.row}>
           <Icon
             name="moon"
             size={22}
-            color={darkMode ? '#FFD700' : '#555'}
+            color={isDarkMode ? '#FFD700' : '#555'}
             style={styles.icon}
           />
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Dark Mode</Text>
-            <Text style={styles.subtitle}>
-              {darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+            <Text style={[styles.title, { color: colors.text }]}>
+              Dark Mode
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.text }]}>
+              {isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
             </Text>
           </View>
           <Switch
-            value={darkMode}
-            onValueChange={toggleSwitch}
+            value={isDarkMode}
+            onValueChange={toggleColorMode}
             trackColor={{ false: '#ccc', true: '#4a90e2' }}
-            thumbColor={darkMode ? '#000' : '#fff'}
+            thumbColor={isDarkMode ? '#fff' : '#000'}
           />
         </View>
       </View>
       <View style={styles.container2}>
-        {/* Card */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>About</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            About
+          </Text>
 
           <View style={styles.itemRow}>
-            <Icon name="information-circle-outline" size={20} color="#4B5563" />
+            <Icon
+              name="information-circle-outline"
+              size={20}
+              color={colors.text}
+            />
             <View style={styles.itemText}>
-              <Text style={styles.itemTitle}>About App</Text>
-              <Text style={styles.itemSubtitle}>
+              <Text style={[styles.itemTitle, { color: colors.text }]}>
+                About App
+              </Text>
+              <Text style={[styles.itemSubtitle, { color: colors.text }]}>
                 Version 1.0.0 • Family Board
               </Text>
             </View>
@@ -189,7 +227,7 @@ export default function SettingsScreen({ navigation }) {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footerText}>
+        <Text style={[styles.footerText, { color: colors.text }]}>
           Made with <Text style={styles.heart}>❤️</Text> for families everywhere
         </Text>
       </View>
@@ -221,7 +259,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 5,
+    // marginTop: 5,
     marginLeft: 10,
   },
   addButton: {
@@ -329,7 +367,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   card: {
-    backgroundColor: '#fff',
+    // backgroundColor: ,
     width: '100%',
     padding: 20,
     borderRadius: 12,
