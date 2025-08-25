@@ -11,6 +11,8 @@ import AddTaskModal from '../components/taskModal';
 import CheckBox from '@react-native-community/checkbox';
 import { useNavigation } from '@react-navigation/native';
 import { useColors } from '../contextApi/colorContext';
+// import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Feather';
 import { getColors } from './colors';
 export default function TasksScreen() {
   const { isDarkMode } = useColors();
@@ -19,6 +21,7 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('All');
   const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const filters = ['All', 'Shopping', 'Chores', 'Reminders'];
 
@@ -42,6 +45,12 @@ export default function TasksScreen() {
     loadTasks();
     setModalVisible(false);
   };
+  const handleEditTask = task => {
+    loadTasks();
+    setSelectedTask(task);
+    setModalVisible(true);
+  };
+
   const filteredTasks =
     filter === 'All'
       ? tasks
@@ -118,15 +127,30 @@ export default function TasksScreen() {
               tintColors={{ true: 'black', false: 'gray' }}
             />
             <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.taskTitle,
-                  item.completed && styles.taskTitleCompleted,
-                  { color: colors.text },
-                ]}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}
               >
-                {item.title}
-              </Text>
+                <Text
+                  style={[
+                    styles.taskTitle,
+                    item.completed && styles.taskTitleCompleted,
+                    { color: colors.text },
+                  ]}
+                >
+                  {item.title}
+                </Text>
+
+                {/* ✏️ Edit button */}
+                <TouchableOpacity onPress={() => handleEditTask(item)}>
+                  <Text style={{ fontSize: 16, color: colors.text }}>
+                    <Icon name="edit" size={22} color={colors.text} />
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={[styles.taskNotes, { color: colors.itemSubtitle }]}>
                 {item.notes || 'No notes'}
               </Text>
@@ -155,6 +179,14 @@ export default function TasksScreen() {
       {/* Add Task Modal */}
       {isModalVisible && (
         <AddTaskModal visible={isModalVisible} onClose={handleTaskSaved} />
+      )}
+      {isModalVisible && (
+        <AddTaskModal
+          visible={isModalVisible}
+          onClose={handleTaskSaved}
+          taskToEdit={selectedTask}
+          setSelectedTask={setSelectedTask} // 👈 pass selected task
+        />
       )}
     </View>
   );

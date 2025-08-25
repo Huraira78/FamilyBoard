@@ -18,23 +18,23 @@ import { getColors } from '../Screens/colors';
 
 const ITEM_HEIGHT = 44;
 
-export default function AddTaskModal({ visible, onClose }) {
+export default function AddTaskModal({
+  visible,
+  onClose,
+  taskToEdit,
+  setSelectedTask,
+}) {
   const { isDarkMode } = useColors();
   const colors = getColors(isDarkMode);
   const navigation = useNavigation();
-  const categories = [
-    { label: '🧹 Chores', value: 'chores' },
-    { label: '🛒 Shopping', value: 'shopping' },
-    { label: '⏰ Reminders', value: 'reminders' },
-  ];
 
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
-  const [category, setCategory] = useState(categories[0]);
+  const [category, setCategory] = useState([]);
   const [assignee, setAssignee] = useState(null);
   const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-
+  const [categories, setCategories] = useState([]);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const categoryHeight = useRef(new Animated.Value(0)).current;
@@ -66,44 +66,86 @@ export default function AddTaskModal({ visible, onClose }) {
     setDueDate(currentDate);
   };
 
+  // const saveTask = async () => {
+  //   try {
+  //     const newTask = {
+  //       id: Date.now(),
+  //       title,
+  //       notes,
+  //       category: category.value,
+  //       assignee: assignee ? assignee.value : null,
+  //       dueDate,
+  //     };
+
+  //     const existingTasks = await AsyncStorage.getItem('tasks');
+  //     let updatedTasks = [];
+
+  //     if (existingTasks !== null) {
+  //       updatedTasks = JSON.parse(existingTasks);
+  //     }
+
+  //     updatedTasks.push(newTask);
+
+  //     await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
+  //     navigation.navigate('Tasks');
+  //     closeModal();
+  //     console.log('Task saved successfully!');
+  //   } catch (error) {
+  //     console.error('Error saving task:', error);
+  //   }
+  // };
   const saveTask = async () => {
     try {
-      const newTask = {
-        id: Date.now(),
-        title,
-        notes,
-        category: category.value,
-        assignee: assignee ? assignee.value : null,
-        dueDate,
-      };
-
       const existingTasks = await AsyncStorage.getItem('tasks');
-      let updatedTasks = [];
+      let updatedTasks = existingTasks ? JSON.parse(existingTasks) : [];
 
-      if (existingTasks !== null) {
-        updatedTasks = JSON.parse(existingTasks);
+      if (taskToEdit) {
+        // Update existing
+        updatedTasks = updatedTasks.map(t =>
+          t.id === taskToEdit.id
+            ? {
+                ...t,
+                title,
+                notes,
+                category: category.value,
+                assignee: assignee?.value,
+                dueDate,
+              }
+            : t,
+        );
+      } else {
+        // Create new
+        const newTask = {
+          id: Date.now(),
+          title,
+          notes,
+          category: category.value,
+          assignee: assignee?.value || null,
+          dueDate,
+          completed: false,
+        };
+        updatedTasks.push(newTask);
       }
 
-      updatedTasks.push(newTask);
-
       await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-      navigation.navigate('Tasks');
       closeModal();
-      console.log('Task saved successfully!');
+      navigation.navigate('Tasks');
     } catch (error) {
-      console.error('Error saving task:', error);
+      console.error('Error saving/updating task:', error);
     }
   };
+
   const resetForm = () => {
     setTitle('');
     setNotes('');
-    setCategory({ label: 'Chores', value: 'chores' }); // default category
-    setAssignee(null); // or default if you want
+    setCategory({ label: 'Chores', value: 'chores' });
+    setAssignee(null);
     setDueDate(new Date());
   };
 
   const closeModal = () => {
     onClose();
+    if (setSelectedTask) setSelectedTask(null);
     resetForm();
   };
 
@@ -126,9 +168,59 @@ export default function AddTaskModal({ visible, onClose }) {
         console.error('Error loading family members:', error);
       }
     };
+    const loadCategories = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('categories');
+        if (stored) {
+          setCategories(JSON.parse(stored));
+        } else {
+          const categories = [
+            { label: '🧹 Chores', value: 'chores' },
+            { label: '🛒 Shopping', value: 'shopping' },
+            { label: '⏰ Reminders', value: 'reminders' },
+          ];
 
+          setCategories(categories);
+          await AsyncStorage.setItem('categories', JSON.stringify(categories));
+        }
+      } catch (error) {
+        console.error('Error loading family members:', error);
+      }
+    };
+    loadCategories();
     loadPeople();
   }, []);
+  useEffect(() => {
+    if (taskToEdit) {
+      setTitle(taskToEdit.title);
+      setNotes(taskToEdit.notes);
+      setCategory({ label: taskToEdit.category, value: taskToEdit.category });
+      setAssignee(
+        taskToEdit.assignee
+          ? { label: taskToEdit.assignee, value: taskToEdit.assignee }
+          : null,
+      );
+      setDueDate(new Date(taskToEdit.dueDate));
+    } else {
+      resetForm();
+    }
+  }, [taskToEdit]);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(scaleAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
 
   return (
     <Modal
@@ -137,7 +229,9 @@ export default function AddTaskModal({ visible, onClose }) {
       animationIn="zoomIn"
       animationOut="zoomOut"
     >
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Animated.View
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           style={{ maxHeight: '100%' }}
           contentContainerStyle={{ paddingBottom: 20 }}
@@ -197,7 +291,7 @@ export default function AddTaskModal({ visible, onClose }) {
             activeOpacity={0.8}
           >
             <Text style={[styles.dropdownHeaderText, { color: colors.text }]}>
-              {category.label}
+              {category.label ? category.label : 'No category selected'}
             </Text>
             <Text style={[styles.caret, { color: colors.text }]}>
               {isCategoryOpen ? '▴' : '▾'}
@@ -328,11 +422,13 @@ export default function AddTaskModal({ visible, onClose }) {
               }}
               disabled={!title}
             >
-              <Text style={styles.saveText}>Save Task</Text>
+              <Text style={styles.saveText}>
+                {taskToEdit ? 'Update Task' : 'Save Task'}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
