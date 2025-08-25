@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   Switch,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -18,15 +19,26 @@ const DEFAULT_PEOPLE = [
   { label: '🧒 Kids', value: '🧒 Kids' },
 ];
 
+const DEFAULT_CATEGORIES = [
+  { label: '🧹 Chores', value: 'chores' },
+  { label: '🛒 Shopping', value: 'shopping' },
+  { label: '⏰ Reminders', value: 'reminders' },
+];
 const EMOJI_OPTIONS = ['👨', '👩', '🧒', '👵', '👴', '🐶', '🐱'];
+const category_Emoji = ['🧹', '🛒', '⏰', '📚', '💼', '🍽️', '🏋️', '🎉'];
 
 export default function SettingsScreen({ navigation }) {
   const { isDarkMode, toggleColorMode } = useColors();
   const colors = getColors(isDarkMode);
   const [people, setPeople] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('');
+  const [selectedCatEmoji, setSelectedCatEmoji] = useState('');
   const [adding, setAdding] = useState(false);
+  const [addingCat, setAddingCat] = useState(false);
+
   const [darkMode, setDarkMode] = useState(false);
 
   const toggleSwitch = () => setDarkMode(previousState => !previousState);
@@ -41,6 +53,19 @@ export default function SettingsScreen({ navigation }) {
         setPeople(DEFAULT_PEOPLE);
       }
     };
+    const loadCategories = async () => {
+      const stored = await AsyncStorage.getItem('categories');
+      if (stored) {
+        setCategories(JSON.parse(stored));
+      } else {
+        await AsyncStorage.setItem(
+          'categories',
+          JSON.stringify(DEFAULT_CATEGORIES),
+        );
+        setCategories(DEFAULT_CATEGORIES);
+      }
+    };
+    loadCategories();
     loadPeople();
   }, []);
 
@@ -49,7 +74,10 @@ export default function SettingsScreen({ navigation }) {
     setPeople(updated);
     await AsyncStorage.setItem('people', JSON.stringify(updated));
   };
-
+  const saveCategory = async updated => {
+    setCategories(updated);
+    await AsyncStorage.setItem('categories', JSON.stringify(updated));
+  };
   // Add new person
   const handleAdd = () => {
     if (!name.trim() || !selectedEmoji) return;
@@ -63,11 +91,29 @@ export default function SettingsScreen({ navigation }) {
     setSelectedEmoji('');
     setAdding(false);
   };
+  // new category
+  const handleAddCat = () => {
+    if (!category.trim() || !selectedCatEmoji) return;
+    const newCAt = {
+      label: `${selectedCatEmoji} ${category.trim()}`,
+      value: `${selectedCatEmoji} ${category.trim()}`,
+    };
+    const updated = [...categories, newCAt];
+    saveCategory(updated);
+    setCategory('');
+    setSelectedCatEmoji('');
+    setAddingCat(false);
+  };
 
   // Delete person
   const handleDelete = index => {
     const updated = people.filter((_, i) => i !== index);
     savePeople(updated);
+  };
+
+  const handleDeleteCat = index => {
+    const updated = categories.filter((_, i) => i !== index);
+    saveCategory(updated);
   };
 
   return (
@@ -83,154 +129,252 @@ export default function SettingsScreen({ navigation }) {
           Settings
         </Text>
       </View>
-      <View style={[styles.familyView, { backgroundColor: colors.card }]}>
-        {/* Add button */}
-        {!adding && (
-          <View
-            style={[
-              styles.addRow,
-
-              {
-                backgroundColor: colors.card,
-                borderWidth: 1,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <Text style={[styles.familyText, { color: colors.text }]}>
-              👨‍👩‍👧 Family Members
-            </Text>
-            <TouchableOpacity onPress={() => setAdding(true)}>
-              <Text style={[styles.plusIcon, { color: colors.text }]}>+</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Add form */}
-        {adding && (
-          <View style={[styles.addForm, { backgroundColor: colors.card }]}>
-            <Text style={{ color: colors.text }}>Name</Text>
-            <TextInput
-              t
-              style={[
-                styles.input,
-                { color: colors.text, borderColor: colors.border },
-              ]}
-              placeholder="Enter name"
-              value={name}
-              onChangeText={setName}
-              placeholderTextColor={isDarkMode ? '#aaa' : '#555'}
-            />
-            <Text style={{ color: colors.text }}>Avatar</Text>
-            <View style={styles.emojiRow}>
-              {EMOJI_OPTIONS.map(emoji => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={[
-                    styles.emojiButton,
-                    selectedEmoji === emoji && styles.selectedEmoji,
-                  ]}
-                  onPress={() => setSelectedEmoji(emoji)}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.formButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
-                onPress={handleAdd}
-                disabled={!name}
-              >
-                <Text style={styles.buttonText}>Add</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => setAdding(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* List */}
-        <FlatList
-          data={people}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item, index }) => (
+      <ScrollView>
+        <View style={[styles.familyView, { backgroundColor: colors.card }]}>
+          {/* Add button */}
+          {!adding && (
             <View
               style={[
-                styles.personRow,
-                { backgroundColor: colors.card, borderColor: colors.border },
+                styles.addRow,
+
+                {
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                },
               ]}
             >
-              <Text style={[styles.personText, { color: colors.text }]}>
-                {item.label}
+              <Text style={[styles.familyText, { color: colors.text }]}>
+                👨‍👩‍👧 Family Members
               </Text>
-              <TouchableOpacity onPress={() => handleDelete(index)}>
-                <Text style={styles.deleteIcon}>
-                  <Icon name="trash-outline" size={24} color="red" />
-                </Text>
+              <TouchableOpacity onPress={() => setAdding(true)}>
+                <Text style={[styles.plusIcon, { color: colors.text }]}>+</Text>
               </TouchableOpacity>
             </View>
           )}
-        />
-      </View>
-      <View style={[styles.container1, { backgroundColor: colors.card }]}>
-        <Text style={[styles.header1, { color: colors.text }]}>Appearance</Text>
-        <View style={styles.row}>
-          <Icon
-            name="moon"
-            size={22}
-            color={isDarkMode ? '#FFD700' : '#555'}
-            style={styles.icon}
-          />
-          <View style={styles.textContainer}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Dark Mode
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.text }]}>
-              {isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
-            </Text>
-          </View>
-          <Switch
-            value={isDarkMode}
-            onValueChange={toggleColorMode}
-            trackColor={{ false: '#ccc', true: '#4a90e2' }}
-            thumbColor={isDarkMode ? '#fff' : '#000'}
+
+          {/* Add form */}
+          {adding && (
+            <View style={[styles.addForm, { backgroundColor: colors.card }]}>
+              <Text style={{ color: colors.text }}>Name</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { color: colors.text, borderColor: colors.border },
+                ]}
+                placeholder="Enter name"
+                value={name}
+                onChangeText={setName}
+                placeholderTextColor={isDarkMode ? '#aaa' : '#555'}
+              />
+              <Text style={{ color: colors.text }}>Avatar</Text>
+              <View style={styles.emojiRow}>
+                {EMOJI_OPTIONS.map(emoji => (
+                  <TouchableOpacity
+                    key={emoji}
+                    style={[
+                      styles.emojiButton,
+                      selectedEmoji === emoji && styles.selectedEmoji,
+                    ]}
+                    onPress={() => setSelectedEmoji(emoji)}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.formButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.saveButton]}
+                  onPress={handleAdd}
+                  disabled={!name}
+                >
+                  <Text style={styles.buttonText}>Add</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setAdding(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* List */}
+          <FlatList
+            data={people}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item, index }) => (
+              <View
+                style={[
+                  styles.personRow,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.personText, { color: colors.text }]}>
+                  {item.label}
+                </Text>
+                <TouchableOpacity onPress={() => handleDelete(index)}>
+                  <Text style={styles.deleteIcon}>
+                    <Icon name="trash-outline" size={24} color="red" />
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           />
         </View>
-      </View>
-      <View style={styles.container2}>
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            About
-          </Text>
+        <View style={[styles.familyView, { backgroundColor: colors.card }]}>
+          {/* Add button */}
+          {!addingCat && (
+            <View
+              style={[
+                styles.addRow,
 
-          <View style={styles.itemRow}>
-            <Icon
-              name="information-circle-outline"
-              size={20}
-              color={colors.text}
-            />
-            <View style={styles.itemText}>
-              <Text style={[styles.itemTitle, { color: colors.text }]}>
-                About App
+                {
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.familyText, { color: colors.text }]}>
+                🗂️ Categories
               </Text>
-              <Text style={[styles.itemSubtitle, { color: colors.text }]}>
-                Version 1.0.0 • Family Board
+              <TouchableOpacity onPress={() => setAddingCat(true)}>
+                <Text style={[styles.plusIcon, { color: colors.text }]}>+</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Add form */}
+          {addingCat && (
+            <View style={[styles.addForm, { backgroundColor: colors.card }]}>
+              <Text style={{ color: colors.text }}>Category</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { color: colors.text, borderColor: colors.border },
+                ]}
+                placeholder="Enter category"
+                value={category}
+                onChangeText={setCategory}
+                placeholderTextColor={isDarkMode ? '#aaa' : '#555'}
+              />
+              <Text style={{ color: colors.text }}>Avatar</Text>
+              <View style={styles.emojiRow}>
+                {category_Emoji.map(emoji => (
+                  <TouchableOpacity
+                    key={emoji}
+                    style={[
+                      styles.emojiButton,
+                      selectedCatEmoji === emoji && styles.selectedEmoji,
+                    ]}
+                    onPress={() => setSelectedCatEmoji(emoji)}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.formButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.saveButton]}
+                  onPress={handleAddCat}
+                  disabled={!category}
+                >
+                  <Text style={styles.buttonText}>Add</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setAddingCat(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* List */}
+          <FlatList
+            data={categories}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item, index }) => (
+              <View
+                style={[
+                  styles.personRow,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.personText, { color: colors.text }]}>
+                  {item.label}
+                </Text>
+                <TouchableOpacity onPress={() => handleDeleteCat(index)}>
+                  <Text style={styles.deleteIcon}>
+                    <Icon name="trash-outline" size={24} color="red" />
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          />
+        </View>
+        <View style={[styles.container1, { backgroundColor: colors.card }]}>
+          <Text style={[styles.header1, { color: colors.text }]}>
+            Appearance
+          </Text>
+          <View style={styles.row}>
+            <Icon
+              name="moon"
+              size={22}
+              color={isDarkMode ? '#FFD700' : '#555'}
+              style={styles.icon}
+            />
+            <View style={styles.textContainer}>
+              <Text style={[styles.title, { color: colors.text }]}>
+                Dark Mode
+              </Text>
+              <Text style={[styles.subtitle, { color: colors.text }]}>
+                {isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
               </Text>
             </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleColorMode}
+              trackColor={{ false: '#ccc', true: '#4a90e2' }}
+              thumbColor={isDarkMode ? '#fff' : '#000'}
+            />
           </View>
         </View>
+        <View style={styles.container2}>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              About
+            </Text>
 
-        {/* Footer */}
-        <Text style={[styles.footerText, { color: colors.text }]}>
-          Made with <Text style={styles.heart}>❤️</Text> for families everywhere
-        </Text>
-      </View>
+            <View style={styles.itemRow}>
+              <Icon
+                name="information-circle-outline"
+                size={20}
+                color={colors.text}
+              />
+              <View style={styles.itemText}>
+                <Text style={[styles.itemTitle, { color: colors.text }]}>
+                  About App
+                </Text>
+                <Text style={[styles.itemSubtitle, { color: colors.text }]}>
+                  Version 1.0.0 • Family Board
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Footer */}
+          <Text style={[styles.footerText, { color: colors.text }]}>
+            Made with <Text style={styles.heart}>❤️</Text> for families
+            everywhere
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
